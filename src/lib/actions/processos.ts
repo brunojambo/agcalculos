@@ -12,26 +12,53 @@ function parseDate(value: FormDataEntryValue | null) {
   return raw ? new Date(`${raw}T12:00:00-03:00`) : null;
 }
 
+async function requireUserId() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("Usuario nao autenticado.");
+  return session.user.id;
+}
+
+function parseStatus(value: FormDataEntryValue | null) {
+  const status = String(value ?? "");
+  if (!Object.values(StatusProcesso).includes(status as StatusProcesso)) {
+    throw new Error("Status invalido.");
+  }
+  return status as StatusProcesso;
+}
+
 export async function criarProcesso(formData: FormData) {
+  const usuarioId = await requireUserId();
   const reclamante = String(formData.get("reclamante") ?? "").trim();
   const clienteId = String(formData.get("clienteId") ?? "").trim();
   const tipoCalculoId = String(formData.get("tipoCalculoId") ?? "").trim();
 
   if (!reclamante || !clienteId || !tipoCalculoId) {
-    throw new Error("Reclamante, cliente e tipo de cálculo são obrigatórios.");
+    throw new Error("Reclamante, cliente e tipo de calculo sao obrigatorios.");
   }
 
-  await prisma.processo.create({
-    data: {
-      numeroCnj: String(formData.get("numeroCnj") ?? "").trim() || null,
-      reclamante,
-      reclamada: String(formData.get("reclamada") ?? "").trim() || null,
-      clienteId,
-      tipoCalculoId,
-      prazoInterno: parseDate(formData.get("prazoInterno")),
-      prazoFatal: parseDate(formData.get("prazoFatal")),
-      observacao: String(formData.get("observacao") ?? "").trim() || null
-    }
+  await prisma.$transaction(async (tx) => {
+    const processo = await tx.processo.create({
+      data: {
+        numeroCnj: String(formData.get("numeroCnj") ?? "").trim() || null,
+        reclamante,
+        reclamada: String(formData.get("reclamada") ?? "").trim() || null,
+        clienteId,
+        tipoCalculoId,
+        prazoInterno: parseDate(formData.get("prazoInterno")),
+        prazoFatal: parseDate(formData.get("prazoFatal")),
+        observacao: String(formData.get("observacao") ?? "").trim() || null
+      }
+    });
+
+    await tx.movimentacao.create({
+      data: {
+        processoId: processo.id,
+        usuarioId,
+        statusAnterior: null,
+        statusNovo: processo.status,
+        observacao: "Processo cadastrado."
+      }
+    });
   });
 
   revalidatePath("/dashboard/processos");
@@ -39,10 +66,8 @@ export async function criarProcesso(formData: FormData) {
 }
 
 export async function alterarStatus(processoId: string, formData: FormData) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) throw new Error("Usuário não autenticado.");
-
-  const statusNovo = String(formData.get("status") ?? "") as StatusProcesso;
+  const usuarioId = await requireUserId();
+  const statusNovo = parseStatus(formData.get("status"));
   const observacao = String(formData.get("observacao") ?? "").trim() || null;
 
   const processo = await prisma.processo.findUniqueOrThrow({ where: { id: processoId } });
@@ -58,7 +83,7 @@ export async function alterarStatus(processoId: string, formData: FormData) {
     prisma.movimentacao.create({
       data: {
         processoId,
-        usuarioId: session.user.id,
+        usuarioId,
         statusAnterior: processo.status,
         statusNovo,
         observacao
@@ -71,6 +96,8 @@ export async function alterarStatus(processoId: string, formData: FormData) {
 }
 
 export async function atribuirResponsaveis(processoId: string, formData: FormData) {
+  await requireUserId();
+
   await prisma.processo.update({
     where: { id: processoId },
     data: {
