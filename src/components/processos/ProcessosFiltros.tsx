@@ -1,42 +1,61 @@
 "use client";
+
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useTransition } from "react";
 import { Search } from "lucide-react";
 
 const STATUS_OPTS = [
-  { value: "", label: "Todos" },
-  { value: "DISPONIVEL",  label: "Disponível" },
-  { value: "TRIAGEM",     label: "Triagem" },
-  { value: "DIGITACAO",   label: "Digitação" },
-  { value: "REVISAO",     label: "Revisão" },
-  { value: "APROVACAO",   label: "Aprovação" },
-  { value: "CONCLUIDO",   label: "Concluído" },
-  { value: "AGUARDANDO",  label: "Aguardando" },
+  { value: "", label: "Todos os status" },
+  { value: "NOVO", label: "Novo" },
+  { value: "TRIAGEM", label: "Triagem" },
+  { value: "DIGITACAO", label: "Digitação" },
+  { value: "ELABORACAO", label: "Elaboração" },
+  { value: "REVISAO", label: "Revisão" },
+  { value: "QUALIDADE", label: "Qualidade" },
+  { value: "AGUARDANDO_CLIENTE", label: "Aguardando cliente" },
+  { value: "FINALIZADO", label: "Finalizado" },
+  { value: "CANCELADO", label: "Cancelado" },
 ];
 
-export function ProcessosFiltros() {
-  const router = useRouter();
-  const sp     = useSearchParams();
+interface Cliente {
+  id: string;
+  razaoSocial: string;
+  nomeFantasia: string | null;
+}
 
-  const update = useCallback((key: string, value: string) => {
-    const params = new URLSearchParams(sp?.toString() ?? "");
-    if (value) params.set(key, value);
-    else params.delete(key);
-    params.delete("page");
-    router.push(`/dashboard/processos?${params.toString()}`);
-  }, [router, sp]);
+interface Props {
+  clientes: Cliente[];
+}
+
+export function ProcessosFiltros({ clientes }: Props) {
+  const router = useRouter();
+  const sp = useSearchParams();
+  const [, startTransition] = useTransition();
+
+  const update = useCallback(
+    (key: string, value: string) => {
+      const params = new URLSearchParams(sp?.toString() ?? "");
+      if (value) params.set(key, value);
+      else params.delete(key);
+      params.delete("page");
+      startTransition(() => {
+        router.push(`/dashboard/processos?${params.toString()}`);
+      });
+    },
+    [router, sp]
+  );
 
   return (
-    <div className="flex items-center gap-3 flex-wrap">
+    <div className="flex flex-wrap items-center gap-3">
       {/* Busca */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
           placeholder="Buscar CNJ ou reclamante..."
-          defaultValue={sp?.get("search") ?? ""}
-          onChange={(e) => update("search", e.target.value)}
-          className="pl-9 pr-4 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy w-72"
+          defaultValue={sp?.get("q") ?? ""}
+          onChange={(e) => update("q", e.target.value)}
+          className="w-72 rounded-xl border border-gray-300 py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
@@ -44,12 +63,38 @@ export function ProcessosFiltros() {
       <select
         defaultValue={sp?.get("status") ?? ""}
         onChange={(e) => update("status", e.target.value)}
-        className="border border-slate-200 rounded-md text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-navy bg-white"
+        className="rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         {STATUS_OPTS.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
         ))}
       </select>
+
+      {/* Cliente */}
+      <select
+        defaultValue={sp?.get("clienteId") ?? ""}
+        onChange={(e) => update("clienteId", e.target.value)}
+        className="rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="">Todos os clientes</option>
+        {clientes.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.nomeFantasia ?? c.razaoSocial}
+          </option>
+        ))}
+      </select>
+
+      {/* Limpar filtros */}
+      {(sp?.get("q") || sp?.get("status") || sp?.get("clienteId")) && (
+        <button
+          onClick={() => router.push("/dashboard/processos")}
+          className="rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50"
+        >
+          Limpar filtros
+        </button>
+      )}
     </div>
   );
 }
