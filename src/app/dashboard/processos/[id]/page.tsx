@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db/prisma";
 import { formatDate, statusClass, statusLabel } from "@/lib/utils/format";
 import { formatCNJ } from "@/lib/utils/cnj";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProcessoDetalhePage({ params }: { params: { id: string } }) {
   const processo = await prisma.processo.findUnique({
     where: { id: params.id },
@@ -22,6 +24,11 @@ export default async function ProcessoDetalhePage({ params }: { params: { id: st
   const usuarios = await prisma.usuario.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } });
   const alterarStatusAction = alterarStatus.bind(null, processo.id);
   const atribuirAction = atribuirResponsaveis.bind(null, processo.id);
+  const responsaveisFields: Array<[name: string, label: string, value: string | null]> = [
+    ["triadorId", "Triador", processo.triadorId],
+    ["digitadorId", "Digitador", processo.digitadorId],
+    ["executorId", "Executor", processo.executorId]
+  ];
 
   return (
     <div className="space-y-6">
@@ -49,11 +56,7 @@ export default async function ProcessoDetalhePage({ params }: { params: { id: st
         <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
           <h2 className="font-semibold">Responsáveis</h2>
           <form action={atribuirAction} className="mt-4 space-y-3 text-sm">
-            {[
-              ["triadorId", "Triador", processo.triadorId],
-              ["digitadorId", "Digitador", processo.digitadorId],
-              ["executorId", "Executor", processo.executorId]
-            ].map(([name, label, value]) => (
+            {responsaveisFields.map(([name, label, value]) => (
               <label key={name} className="block font-medium">{label}
                 <select name={name} defaultValue={value ?? ""} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
                   <option value="">Não atribuído</option>

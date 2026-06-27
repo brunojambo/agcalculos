@@ -1,6 +1,8 @@
 import { criarProcesso } from "@/lib/actions/processos";
 import { prisma } from "@/lib/db/prisma";
 
+export const dynamic = "force-dynamic";
+
 export default async function NovoProcessoPage() {
   const [clientes, tipos] = await Promise.all([
     prisma.cliente.findMany({ where: { ativo: true }, orderBy: { razaoSocial: "asc" } }),

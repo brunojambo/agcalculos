@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db/prisma";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const [total, finalizados, pendentes, clientes] = await Promise.all([
     prisma.processo.count(),

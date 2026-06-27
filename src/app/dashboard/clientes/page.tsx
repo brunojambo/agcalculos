@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db/prisma";
 
+export const dynamic = "force-dynamic";
+
 export default async function ClientesPage() {
   const clientes = await prisma.cliente.findMany({ orderBy: { razaoSocial: "asc" }, include: { _count: { select: { processos: true } } } });
 

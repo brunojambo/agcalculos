@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db/prisma";
 import { formatDate } from "@/lib/utils/format";
 
+export const dynamic = "force-dynamic";
+
 export default async function RelatoriosPage() {
   const finalizados = await prisma.processo.findMany({
     where: { status: "FINALIZADO" },

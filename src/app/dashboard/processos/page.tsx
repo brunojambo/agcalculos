@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db/prisma";
 import { formatDate, statusClass, statusLabel } from "@/lib/utils/format";
 import { formatCNJ } from "@/lib/utils/cnj";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProcessosPage() {
   const processos = await prisma.processo.findMany({
     orderBy: [{ status: "asc" }, { prazoInterno: "asc" }, { createdAt: "desc" }],

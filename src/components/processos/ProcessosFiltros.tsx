@@ -19,7 +19,7 @@ export function ProcessosFiltros() {
   const sp     = useSearchParams();
 
   const update = useCallback((key: string, value: string) => {
-    const params = new URLSearchParams(sp.toString());
+    const params = new URLSearchParams(sp?.toString() ?? "");
     if (value) params.set(key, value);
     else params.delete(key);
     params.delete("page");
@@ -34,7 +34,7 @@ export function ProcessosFiltros() {
         <input
           type="text"
           placeholder="Buscar CNJ ou reclamante..."
-          defaultValue={sp.get("search") ?? ""}
+          defaultValue={sp?.get("search") ?? ""}
           onChange={(e) => update("search", e.target.value)}
           className="pl-9 pr-4 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy w-72"
         />
@@ -42,7 +42,7 @@ export function ProcessosFiltros() {
 
       {/* Status */}
       <select
-        defaultValue={sp.get("status") ?? ""}
+        defaultValue={sp?.get("status") ?? ""}
         onChange={(e) => update("status", e.target.value)}
         className="border border-slate-200 rounded-md text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-navy bg-white"
       >
