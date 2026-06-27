@@ -29,7 +29,7 @@ export default async function RelatoriosPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {finalizados.map((processo) => (
+            {finalizados.map((processo: any) => (
               <tr key={processo.id}>
                 <td className="px-4 py-3">{formatDate(processo.dataEntrega)}</td>
                 <td className="px-4 py-3 font-medium">{processo.reclamante}</td>

@@ -1,25 +1,7 @@
-import type { Role, StatusProcesso, StatusFatura } from "@prisma/client";
+export type Role = "ADMIN" | "GESTOR" | "TRIADOR" | "DIGITADOR" | "EXECUTOR" | "QUALIDADE" | "FINANCEIRO" | "CLIENTE";
 
-export type { Role, StatusProcesso, StatusFatura };
+export type StatusProcesso =
+  | "NOVO" | "TRIAGEM" | "DIGITACAO" | "ELABORACAO" | "REVISAO"
+  | "QUALIDADE" | "AGUARDANDO_CLIENTE" | "FINALIZADO" | "CANCELADO";
 
-export interface ProcessoComRelacoes {
-  id: string;
-  numeroCNJ: string;
-  reclamante: string;
-  status: StatusProcesso;
-  prazo: Date | null;
-  codigoInterno: string | null;
-  createdAt: Date;
-  empresa: { id: string; razaoSocial: string; grupo?: { nome: string } | null };
-  tipoCalculo: { codigo: string; descricao: string } | null;
-  triador: { id: string; nome: string } | null;
-  digitador: { id: string; nome: string } | null;
-  executor: { id: string; nome: string } | null;
-}
-
-export interface UsuarioSession {
-  id: string;
-  nome: string;
-  email: string;
-  role: Role;
-}
+export type StatusFatura = "ABERTA" | "FECHADA" | "PAGA" | "CANCELADA";

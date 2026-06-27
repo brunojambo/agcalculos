@@ -65,7 +65,7 @@ export function ProcessosFiltros({ clientes }: Props) {
         onChange={(e) => update("status", e.target.value)}
         className="rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        {STATUS_OPTS.map((o) => (
+        {STATUS_OPTS.map((o: any) => (
           <option key={o.value} value={o.value}>
             {o.label}
           </option>
@@ -79,7 +79,7 @@ export function ProcessosFiltros({ clientes }: Props) {
         className="rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <option value="">Todos os clientes</option>
-        {clientes.map((c) => (
+        {clientes.map((c: any) => (
           <option key={c.id} value={c.id}>
             {c.nomeFantasia ?? c.razaoSocial}
           </option>

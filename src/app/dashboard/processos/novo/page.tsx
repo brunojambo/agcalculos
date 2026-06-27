@@ -30,7 +30,7 @@ export default async function NovoProcessoPage() {
             Cliente
             <select name="clienteId" required className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
               <option value="">Selecione</option>
-              {clientes.map((cliente) => <option key={cliente.id} value={cliente.id}>{cliente.nomeFantasia ?? cliente.razaoSocial}</option>)}
+              {clientes.map((cliente: any) => <option key={cliente.id} value={cliente.id}>{cliente.nomeFantasia ?? cliente.razaoSocial}</option>)}
             </select>
           </label>
           <label className="text-sm font-medium">
@@ -45,7 +45,7 @@ export default async function NovoProcessoPage() {
             Tipo de calculo
             <select name="tipoCalculoId" required className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
               <option value="">Selecione</option>
-              {tipos.map((tipo) => <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>)}
+              {tipos.map((tipo: any) => <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>)}
             </select>
           </label>
           <label className="text-sm font-medium">

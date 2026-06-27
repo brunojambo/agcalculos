@@ -29,7 +29,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        {cards.map((card) => (
+        {cards.map((card: any) => (
           <div key={card.label} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
             <div className="text-sm text-gray-500">{card.label}</div>
             <div className="mt-2 text-3xl font-bold">{card.value}</div>

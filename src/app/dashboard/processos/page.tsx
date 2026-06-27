@@ -3,7 +3,6 @@ import { prisma } from "@/lib/db/prisma";
 import { formatDate, statusClass, statusLabel } from "@/lib/utils/format";
 import { formatCNJ } from "@/lib/utils/cnj";
 import { ProcessosFiltros } from "@/components/processos/ProcessosFiltros";
-import { StatusProcesso } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +19,7 @@ interface Props {
 
 export default async function ProcessosPage({ searchParams }: Props) {
   const q = searchParams.q?.trim() ?? "";
-  const status = searchParams.status as StatusProcesso | undefined;
+  const status = searchParams.status as string | undefined;
   const clienteId = searchParams.clienteId ?? "";
   const page = Math.max(1, Number(searchParams.page ?? 1));
   const skip = (page - 1) * POR_PAGINA;
@@ -89,7 +88,7 @@ export default async function ProcessosPage({ searchParams }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {processos.map((processo) => (
+            {processos.map((processo: any) => (
               <tr key={processo.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-mono text-xs font-medium">
                   <Link

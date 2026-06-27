@@ -79,7 +79,7 @@ export default async function ClientesPage({ searchParams }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {clientes.map((c) => (
+            {clientes.map((c: any) => (
               <tr key={c.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium">
                   <Link href={`/dashboard/clientes/${c.id}`} className="hover:text-blue-700">

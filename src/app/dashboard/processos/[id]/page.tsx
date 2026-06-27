@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
-import { StatusProcesso } from "@prisma/client";
+
 import { alterarStatus, atribuirResponsaveis } from "@/lib/actions/processos";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { prisma } from "@/lib/db/prisma";
 import { formatDate, statusClass, statusLabel } from "@/lib/utils/format";
 import { formatCNJ } from "@/lib/utils/cnj";
+
+const STATUS_OPTIONS = ["NOVO","TRIAGEM","DIGITACAO","ELABORACAO","REVISAO","QUALIDADE","AGUARDANDO_CLIENTE","FINALIZADO","CANCELADO"] as const;
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +63,7 @@ export default async function ProcessoDetalhePage({ params }: { params: { id: st
               <label key={name} className="block font-medium">{label}
                 <select name={name} defaultValue={value ?? ""} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
                   <option value="">Não atribuído</option>
-                  {usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>)}
+                  {usuarios.map((usuario: any) => <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>)}
                 </select>
               </label>
             ))}
@@ -77,7 +79,7 @@ export default async function ProcessoDetalhePage({ params }: { params: { id: st
           <h2 className="font-semibold">Alterar status</h2>
           <form action={alterarStatusAction} className="mt-4 space-y-3">
             <select name="status" defaultValue={processo.status} className="w-full rounded-lg border border-gray-300 px-3 py-2">
-              {Object.values(StatusProcesso).map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}
+              {STATUS_OPTIONS.map((status: any) => <option key={status} value={status}>{statusLabel(status)}</option>)}
             </select>
             <textarea name="observacao" rows={3} placeholder="Observação da movimentação" className="w-full rounded-lg border border-gray-300 px-3 py-2" />
             <SubmitButton pendingLabel="Registrando..." className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white">
@@ -89,7 +91,7 @@ export default async function ProcessoDetalhePage({ params }: { params: { id: st
         <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
           <h2 className="font-semibold">Histórico</h2>
           <div className="mt-4 space-y-3">
-            {processo.movimentacoes.map((mov) => (
+            {processo.movimentacoes.map((mov: any) => (
               <div key={mov.id} className="rounded-xl border border-gray-200 p-3 text-sm">
                 <div className="font-medium">{statusLabel(mov.statusAnterior ?? "NOVO")} → {statusLabel(mov.statusNovo)}</div>
                 <div className="text-gray-500">{mov.usuario.nome} em {formatDate(mov.createdAt)}</div>

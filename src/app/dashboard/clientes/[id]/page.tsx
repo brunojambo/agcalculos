@@ -98,7 +98,7 @@ export default async function ClienteDetalhePage({ params }: { params: { id: str
 
           {/* Lista de contatos */}
           <div className="mt-3 space-y-2">
-            {cliente.contatos.map((c) => (
+            {cliente.contatos.map((c: any) => (
               <div key={c.id} className="flex items-start justify-between rounded-xl border border-gray-200 p-3 text-sm">
                 <div>
                   <p className="font-medium">{c.nome}</p>
@@ -145,7 +145,7 @@ export default async function ClienteDetalhePage({ params }: { params: { id: str
           </Link>
         </div>
         <div className="mt-3 divide-y divide-gray-100">
-          {cliente.processos.map((p) => (
+          {cliente.processos.map((p: any) => (
             <div key={p.id} className="flex items-center justify-between py-2 text-sm">
               <div>
                 <Link href={`/dashboard/processos/${p.id}`} className="font-medium hover:text-blue-700">
