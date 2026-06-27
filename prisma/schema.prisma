@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── AUTENTICAÇÃO ──────────────────────────────────────────────
+model Usuario {
+  id            String    @id @default(cuid())
+  nome          String
+  email         String    @unique
+  senha         String
+  role          Role      @default(EXECUTOR)
+  ativo         Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relações de trabalho
+  processosComo_triador   Processo[] @relation("Triador")
+  processosComo_digitador Processo[] @relation("Digitador")
+  processosComo_executor  Processo[] @relation("Executor")
+  historicos              HistoricoStatus[]
+  ocorrencias             Ocorrencia[]
+  metas                   Meta[]
+  salario                 SalarioUsuario?
+
+  @@map("usuarios")
+}
+
+enum Role {
+  ADMIN
+  GESTOR
+  TRIADOR
+  DIGITADOR
+  EXECUTOR
+}
+
+// ─── CADASTROS BASE ────────────────────────────────────────────
+model Grupo {
+  id        String    @id @default(cuid())
+  nome      String    @unique
+  ativo     Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  empresas  Empresa[]
+
+  @@map("grupos")
+}
+
+model Empresa {
+  id          String    @id @default(cuid())
+  razaoSocial String
+  cnpj        String?   @unique
+  uf          String?
+  cidade      String?
+  telefone1   String?
+  telefone2   String?
+  ativo       Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  grupoId     String?
+  grupo       Grupo?    @relation(fields: [grupoId], references: [id])
+
+  processos   Processo[]
+  contatos    Contato[]
+  faturas     Fatura[]
+
+  @@map("empresas")
+}
+
+model Contato {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String?
+  telefone  String?
+  cargo     String?
+  principal Boolean  @default(false)
+
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+
+  @@map("contatos")
+}
+
+model TipoCalculo {
+  id        String     @id @default(cuid())
+  codigo    String     @unique
+  descricao String
+  ativo     Boolean    @default(true)
+  processos Processo[]
+
+  @@map("tipos_calculo")
+}
+
+model Evento {
+  id        String  @id @default(cuid())
+  codigo    String  @unique
+  descricao String
+  ativo     Boolean @default(true)
+
+  @@map("eventos")
+}
+
+// ─── PROCESSO CORE ─────────────────────────────────────────────
+model Processo {
+  id              String          @id @default(cuid())
+  numeroCNJ       String
+  reclamante      String
+  status          StatusProcesso  @default(DISPONIVEL)
+  prazo           DateTime?
+  codigoInterno   String?
+  observacoes     String?
+  lote            String?
+  projeto         Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // FKs
+  empresaId       String
+  empresa         Empresa         @relation(fields: [empresaId], references: [id])
+  tipoCalculoId   String?
+  tipoCalculo     TipoCalculo?    @relation(fields: [tipoCalculoId], references: [id])
+  triadorId       String?
+  triador         Usuario?        @relation("Triador", fields: [triadorId], references: [id])
+  digitadorId     String?
+  digitador       Usuario?        @relation("Digitador", fields: [digitadorId], references: [id])
+  executorId      String?
+  executor        Usuario?        @relation("Executor", fields: [executorId], references: [id])
+
+  // Relações
+  historicos      HistoricoStatus[]
+  ocorrencias     Ocorrencia[]
+  faturaItens     FaturaItem[]
+
+  @@map("processos")
+}
+
+enum StatusProcesso {
+  DISPONIVEL
+  TRIAGEM
+  DIGITACAO
+  REVISAO
+  APROVACAO
+  CONCLUIDO
+  CANCELADO
+  AGUARDANDO
+}
+
+model HistoricoStatus {
+  id              String         @id @default(cuid())
+  statusAnterior  StatusProcesso?
+  statusNovo      StatusProcesso
+  observacao      String?
+  createdAt       DateTime       @default(now())
+
+  processoId      String
+  processo        Processo       @relation(fields: [processoId], references: [id])
+  usuarioId       String?
+  usuario         Usuario?       @relation(fields: [usuarioId], references: [id])
+
+  @@map("historico_status")
+}
+
+model Ocorrencia {
+  id        String   @id @default(cuid())
+  tipo      String
+  descricao String
+  createdAt DateTime @default(now())
+
+  processoId String
+  processo   Processo @relation(fields: [processoId], references: [id])
+  usuarioId  String?
+  usuario    Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@map("ocorrencias")
+}
+
+// ─── FINANCEIRO ────────────────────────────────────────────────
+model Fatura {
+  id            String       @id @default(cuid())
+  numero        String       @unique
+  periodoInicio DateTime
+  periodoFim    DateTime
+  valorTotal    Decimal      @db.Decimal(12, 2)
+  status        StatusFatura @default(PENDENTE)
+  observacoes   String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  empresaId     String
+  empresa       Empresa      @relation(fields: [empresaId], references: [id])
+  itens         FaturaItem[]
+
+  @@map("faturas")
+}
+
+enum StatusFatura {
+  PENDENTE
+  ENVIADA
+  PAGA
+  CANCELADA
+}
+
+model FaturaItem {
+  id            String   @id @default(cuid())
+  descricao     String?
+  valorUnitario Decimal  @db.Decimal(10, 2)
+  quantidade    Int      @default(1)
+
+  faturaId      String
+  fatura        Fatura   @relation(fields: [faturaId], references: [id])
+  processoId    String?
+  processo      Processo? @relation(fields: [processoId], references: [id])
+
+  @@map("fatura_itens")
+}
+
+model Meta {
+  id         String   @id @default(cuid())
+  periodo    String   // "2024-07" formato YYYY-MM
+  metaQtd    Int?
+  metaValor  Decimal? @db.Decimal(10, 2)
+  createdAt  DateTime @default(now())
+
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@unique([usuarioId, periodo])
+  @@map("metas")
+}
+
+model SalarioUsuario {
+  id        String   @id @default(cuid())
+  salario   Decimal  @db.Decimal(10, 2)
+  vigencia  DateTime
+  createdAt DateTime @default(now())
+
+  usuarioId String   @unique
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@map("salarios_usuarios")
+}
+
+// ─── CONFIGURAÇÃO ──────────────────────────────────────────────
+model Parametro {
+  id    String @id @default(cuid())
+  chave String @unique
+  valor String
+
+  @@map("parametros")
+}
+
+model ErroElaboracao {
+  id        String  @id @default(cuid())
+  codigo    String  @unique
+  descricao String
+  ativo     Boolean @default(true)
+
+  @@map("erros_elaboracao")
+}
+
+model ErroQualidade {
+  id        String  @id @default(cuid())
+  codigo    String  @unique
+  descricao String
+  ativo     Boolean @default(true)
+
+  @@map("erros_qualidade")
+}
