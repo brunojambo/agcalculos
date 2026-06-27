@@ -1,5 +1,5 @@
-import NextAuth from "next-auth";
-import Credentials from "next-auth/providers/credentials";
+import NextAuth, { type NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -9,13 +9,13 @@ const loginSchema = z.object({
   senha: z.string().min(6),
 });
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   pages: {
     signIn: "/auth/login",
   },
   providers: [
-    Credentials({
+    CredentialsProvider({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
@@ -24,21 +24,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
-
         const usuario = await prisma.usuario.findUnique({
           where: { email: parsed.data.email },
         });
         if (!usuario || !usuario.ativo) return null;
-
         const senhaOk = await bcrypt.compare(parsed.data.senha, usuario.senha);
         if (!senhaOk) return null;
-
-        return {
-          id: usuario.id,
-          name: usuario.nome,
-          email: usuario.email,
-          role: usuario.role,
-        };
+        return { id: usuario.id, name: usuario.nome, email: usuario.email, role: usuario.role };
       },
     }),
   ],
@@ -52,4 +44,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
-});
+};
+
+export default NextAuth(authOptions);
