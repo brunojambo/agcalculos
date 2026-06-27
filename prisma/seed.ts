@@ -1,63 +1,72 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding...");
-
-  // Usuário admin
   const senhaHash = await bcrypt.hash("admin123", 10);
+
   await prisma.usuario.upsert({
-    where: { email: "bruno@agcalculos.com.br" },
+    where: { email: "admin@agcalculos.com.br" },
     update: {},
     create: {
-      nome:  "Bruno Guimarães",
-      email: "bruno@agcalculos.com.br",
-      senha: senhaHash,
-      role:  "ADMIN",
-    },
+      nome: "Administrador",
+      email: "admin@agcalculos.com.br",
+      senhaHash,
+      role: Role.ADMIN
+    }
   });
 
-  // Grupos
-  const grupos = ["HAPVIDA", "INDEPENDENTE"];
-  for (const nome of grupos) {
-    await prisma.grupo.upsert({
+  const tipos = [
+    "Cálculo inicial",
+    "Liquidação",
+    "Impugnação",
+    "Parecer técnico",
+    "Valores para acordo",
+    "eSocial",
+    "Coletivo"
+  ];
+
+  for (const nome of tipos) {
+    await prisma.tipoCalculo.upsert({
       where: { nome },
       update: {},
-      create: { nome },
+      create: { nome }
     });
   }
 
-  // Tipos de cálculo
-  const tipos = [
-    { codigo: "01", descricao: "IMPUGNAÇÃO AOS CÁLCULOS" },
-    { codigo: "02", descricao: "LIQUIDAÇÃO DE SENTENÇA" },
-    { codigo: "03", descricao: "PARECER TÉCNICO" },
-    { codigo: "04", descricao: "CONFERÊNCIA PARA ACORDO" },
-    { codigo: "05", descricao: "APRESENTAÇÃO DOS CÁLCULOS (ART. 879 CLT) - EXECUÇÃO" },
-    { codigo: "10", descricao: "E-SOCIAL - S2500 - SEM RECOLHIMENTO INSS/IRPF/FGTS" },
-    { codigo: "11", descricao: "E-SOCIAL - S2501 - INCIDÊNCIA INSS/IRPF/FGTS" },
-    { codigo: "12", descricao: "FGTS DIGITAL (LANÇAR S2500)" },
-  ];
-  for (const t of tipos) {
-    await prisma.tipoCalculo.upsert({
-      where: { codigo: t.codigo },
-      update: {},
-      create: t,
-    });
-  }
-
-  // Parâmetros base
-  await prisma.parametro.upsert({
-    where: { chave: "FUSO_HORARIO" },
+  const cliente = await prisma.cliente.upsert({
+    where: { id: "cliente-demo-ag" },
     update: {},
-    create: { chave: "FUSO_HORARIO", valor: "America/Sao_Paulo" },
+    create: {
+      id: "cliente-demo-ag",
+      razaoSocial: "Cliente Demonstração",
+      nomeFantasia: "Escritório Modelo",
+      cidade: "São Sebastião",
+      uf: "SP"
+    }
   });
 
-  console.log("Seed concluído.");
+  const tipo = await prisma.tipoCalculo.findFirstOrThrow();
+  await prisma.processo.upsert({
+    where: { id: "processo-demo-ag" },
+    update: {},
+    create: {
+      id: "processo-demo-ag",
+      reclamante: "Processo exemplo",
+      reclamada: "Empresa exemplo",
+      numeroCnj: "0000000-00.2026.5.00.0000",
+      clienteId: cliente.id,
+      tipoCalculoId: tipo.id,
+      observacao: "Registro criado para validar a tela inicial."
+    }
+  });
 }
 
 main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+  .then(async () => prisma.$disconnect())
+  .catch(async (error) => {
+    console.error(error);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

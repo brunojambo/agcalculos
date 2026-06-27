@@ -1,51 +1,77 @@
-# AG Cálculos v2
+# AG Cálculos Base
 
-Sistema de gestão de cálculos judiciais trabalhistas — stack moderna.
+Base inicial para um sistema paralelo ao AG Cálculos atual, usando Next.js, Prisma, PostgreSQL/Supabase, NextAuth, Tailwind e deploy na Vercel.
 
-## Stack
-- **Next.js 14** (App Router + Server Actions)
-- **PostgreSQL** via Supabase
-- **Prisma** ORM
-- **NextAuth v5** (JWT + Credentials)
-- **Tailwind CSS** + shadcn/ui
-- **Vercel** (deploy)
+## O que já vem pronto
 
-## Setup local
+- Login com e-mail e senha.
+- Usuários com papel operacional.
+- Cadastro de clientes.
+- Cadastro de processos/cálculos.
+- Fila de processos.
+- Página de detalhe do processo.
+- Alteração de status com histórico.
+- Atribuição de triador, digitador e executor.
+- Relatório básico de finalizados.
+- Prisma schema preparado para financeiro futuro.
+
+## Instalação local
 
 ```bash
-# 1. Instalar dependências
 npm install
-
-# 2. Configurar variáveis
 cp .env.example .env.local
-# Preencher DATABASE_URL e NEXTAUTH_SECRET
+```
 
-# 3. Gerar Prisma Client
-npm run db:generate
+Preencha o `.env.local` com as URLs do Supabase e NextAuth.
 
-# 4. Criar tabelas
+Depois rode:
+
+```bash
 npm run db:push
-
-# 5. Seed inicial
 npm run db:seed
-
-# 6. Rodar dev
 npm run dev
 ```
 
-## Módulos
-- `/dashboard/processos` — Gestão de cálculos (equivalente Arquimedes)
-- `/dashboard/clientes`  — CRM de escritórios (equivalente Kronos)
-- `/dashboard/financeiro` — Faturas, metas, planejamento
-- `/dashboard/relatorios` — Relatórios e exportação Excel
-- `/dashboard/gestao`    — KPIs, avaliações, projeto moro
-- `/dashboard/cadastro`  — Tabelas base (tipos, grupos, eventos)
+Acesse:
 
-## Roles
-| Role      | Acesso |
-|-----------|--------|
-| ADMIN     | Total |
-| GESTOR    | Gestão + relatórios |
-| TRIADOR   | Triagem de processos |
-| DIGITADOR | Digitação |
-| EXECUTOR  | Execução de cálculos |
+```txt
+http://localhost:3000
+```
+
+Usuário inicial:
+
+```txt
+E-mail: admin@agcalculos.com.br
+Senha: admin123
+```
+
+Troque essa senha antes de produção.
+
+## Variáveis de ambiente
+
+```env
+DATABASE_URL="postgresql://postgres.xxxxx:SENHA@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
+DIRECT_URL="postgresql://postgres:SENHA@db.xxxxx.supabase.co:5432/postgres"
+NEXTAUTH_SECRET="gere-uma-chave-grande"
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+Na Vercel, `NEXTAUTH_URL` deve ser o domínio de produção, por exemplo:
+
+```txt
+https://agcalculos.vercel.app
+```
+
+## Ordem recomendada de evolução
+
+1. Estabilizar deploy e login.
+2. Melhorar filtros da fila de processos.
+3. Criar tela de usuários.
+4. Criar módulo financeiro simples.
+5. Criar exportação Excel dos finalizados.
+6. Criar importação em lote.
+7. Criar fila de qualidade e erros de elaboração.
+
+## Observação importante
+
+Esta base não é uma cópia completa do sistema atual. Ela é o núcleo operacional para evoluir com segurança.

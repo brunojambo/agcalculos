@@ -1,111 +1,85 @@
 "use server";
-import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
+
+import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { StatusProcesso } from "@prisma/client";
-import { z } from "zod";
+import { authOptions } from "@/lib/auth/options";
+import { prisma } from "@/lib/db/prisma";
 
-const processoSchema = z.object({
-  numeroCNJ:      z.string().min(20, "CNJ inválido"),
-  reclamante:     z.string().min(2),
-  empresaId:      z.string(),
-  tipoCalculoId:  z.string().optional(),
-  prazo:          z.string().optional(),
-  codigoInterno:  z.string().optional(),
-  observacoes:    z.string().optional(),
-});
+function parseDate(value: FormDataEntryValue | null) {
+  const raw = String(value ?? "").trim();
+  return raw ? new Date(`${raw}T12:00:00-03:00`) : null;
+}
 
-export async function criarProcesso(data: z.infer<typeof processoSchema>) {
-  const session = await auth();
-  if (!session) throw new Error("Não autorizado");
+export async function criarProcesso(formData: FormData) {
+  const reclamante = String(formData.get("reclamante") ?? "").trim();
+  const clienteId = String(formData.get("clienteId") ?? "").trim();
+  const tipoCalculoId = String(formData.get("tipoCalculoId") ?? "").trim();
 
-  const parsed = processoSchema.parse(data);
+  if (!reclamante || !clienteId || !tipoCalculoId) {
+    throw new Error("Reclamante, cliente e tipo de cálculo são obrigatórios.");
+  }
 
-  const processo = await prisma.processo.create({
+  await prisma.processo.create({
     data: {
-      ...parsed,
-      prazo: parsed.prazo ? new Date(parsed.prazo) : null,
-      historicos: {
-        create: {
-          statusNovo: "DISPONIVEL",
-          usuarioId: (session.user as any).id,
-          observacao: "Processo criado",
-        },
-      },
-    },
+      numeroCnj: String(formData.get("numeroCnj") ?? "").trim() || null,
+      reclamante,
+      reclamada: String(formData.get("reclamada") ?? "").trim() || null,
+      clienteId,
+      tipoCalculoId,
+      prazoInterno: parseDate(formData.get("prazoInterno")),
+      prazoFatal: parseDate(formData.get("prazoFatal")),
+      observacao: String(formData.get("observacao") ?? "").trim() || null
+    }
   });
 
   revalidatePath("/dashboard/processos");
-  return processo;
+  redirect("/dashboard/processos");
 }
 
-export async function atualizarStatus(
-  processoId: string,
-  novoStatus: StatusProcesso,
-  observacao?: string
-) {
-  const session = await auth();
-  if (!session) throw new Error("Não autorizado");
+export async function alterarStatus(processoId: string, formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("Usuário não autenticado.");
 
-  const processo = await prisma.processo.findUniqueOrThrow({
-    where: { id: processoId },
-  });
+  const statusNovo = String(formData.get("status") ?? "") as StatusProcesso;
+  const observacao = String(formData.get("observacao") ?? "").trim() || null;
+
+  const processo = await prisma.processo.findUniqueOrThrow({ where: { id: processoId } });
 
   await prisma.$transaction([
     prisma.processo.update({
       where: { id: processoId },
-      data: { status: novoStatus },
+      data: {
+        status: statusNovo,
+        dataEntrega: statusNovo === "FINALIZADO" ? new Date() : processo.dataEntrega
+      }
     }),
-    prisma.historicoStatus.create({
+    prisma.movimentacao.create({
       data: {
         processoId,
+        usuarioId: session.user.id,
         statusAnterior: processo.status,
-        statusNovo: novoStatus,
-        usuarioId: (session.user as any).id,
-        observacao,
-      },
-    }),
+        statusNovo,
+        observacao
+      }
+    })
   ]);
 
+  revalidatePath(`/dashboard/processos/${processoId}`);
   revalidatePath("/dashboard/processos");
 }
 
-export async function listarProcessos(filtros?: {
-  status?: StatusProcesso;
-  empresaId?: string;
-  search?: string;
-  page?: number;
-  limit?: number;
-}) {
-  const page  = filtros?.page  ?? 1;
-  const limit = filtros?.limit ?? 100;
+export async function atribuirResponsaveis(processoId: string, formData: FormData) {
+  await prisma.processo.update({
+    where: { id: processoId },
+    data: {
+      triadorId: String(formData.get("triadorId") ?? "") || null,
+      digitadorId: String(formData.get("digitadorId") ?? "") || null,
+      executorId: String(formData.get("executorId") ?? "") || null
+    }
+  });
 
-  const where: any = {};
-  if (filtros?.status)    where.status    = filtros.status;
-  if (filtros?.empresaId) where.empresaId = filtros.empresaId;
-  if (filtros?.search) {
-    where.OR = [
-      { numeroCNJ:  { contains: filtros.search, mode: "insensitive" } },
-      { reclamante: { contains: filtros.search, mode: "insensitive" } },
-    ];
-  }
-
-  const [processos, total] = await prisma.$transaction([
-    prisma.processo.findMany({
-      where,
-      include: {
-        empresa:     { include: { grupo: true } },
-        tipoCalculo: true,
-        triador:     { select: { id: true, nome: true } },
-        digitador:   { select: { id: true, nome: true } },
-        executor:    { select: { id: true, nome: true } },
-      },
-      orderBy: { prazo: "asc" },
-      skip:  (page - 1) * limit,
-      take:  limit,
-    }),
-    prisma.processo.count({ where }),
-  ]);
-
-  return { processos, total, page, limit };
+  revalidatePath(`/dashboard/processos/${processoId}`);
+  revalidatePath("/dashboard/processos");
 }

@@ -1,53 +1,54 @@
 "use client";
-import { useState } from "react";
+
+import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export function LoginForm() {
   const router = useRouter();
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    const form = e.currentTarget;
-    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
-    const senha = (form.elements.namedItem("senha") as HTMLInputElement).value;
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErro("");
+    setCarregando(true);
+    const formData = new FormData(event.currentTarget);
 
-    const res = await signIn("credentials", { email, senha, redirect: false });
-    if (res?.error) {
-      setError("Email ou senha inválidos.");
-      setLoading(false);
-    } else {
-      router.push("/dashboard/processos");
+    const result = await signIn("credentials", {
+      email: formData.get("email"),
+      password: formData.get("password"),
+      redirect: false
+    });
+
+    setCarregando(false);
+    if (result?.error) {
+      setErro("E-mail ou senha inválidos.");
+      return;
     }
+    router.push("/dashboard");
+    router.refresh();
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-xl p-8 space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-200">
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-        <input
-          name="email" type="email" required autoComplete="email"
-          className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy"
-        />
+        <h1 className="text-2xl font-bold">AG Cálculos</h1>
+        <p className="mt-1 text-sm text-gray-500">Acesse o sistema operacional.</p>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Senha</label>
-        <input
-          name="senha" type="password" required
-          className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy"
-        />
-      </div>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-      <button
-        type="submit" disabled={loading}
-        className="w-full bg-brand-navy text-white py-2.5 rounded-md text-sm font-semibold hover:bg-opacity-90 transition disabled:opacity-60"
-      >
-        {loading ? "Entrando..." : "Entrar"}
+      <label className="block text-sm font-medium">
+        E-mail
+        <input name="email" type="email" defaultValue="admin@agcalculos.com.br" className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" required />
+      </label>
+      <label className="block text-sm font-medium">
+        Senha
+        <input name="password" type="password" defaultValue="admin123" className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" required />
+      </label>
+      {erro ? <p className="text-sm text-red-600">{erro}</p> : null}
+      <button disabled={carregando} className="w-full rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white disabled:opacity-60">
+        {carregando ? "Entrando..." : "Entrar"}
       </button>
+      <p className="text-xs text-gray-500">Usuário inicial criado pelo seed. Troque a senha antes de usar em produção.</p>
     </form>
   );
 }

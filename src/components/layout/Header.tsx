@@ -1,26 +1,17 @@
-"use client";
-import { signOut } from "next-auth/react";
-import { LogOut, User } from "lucide-react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth/options";
 
-interface HeaderProps {
-  user: { name?: string | null; email?: string | null; role?: string };
-}
-
-export function Header({ user }: HeaderProps) {
+export async function Header() {
+  const session = await getServerSession(authOptions);
   return (
-    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
-      <div />
-      <div className="flex items-center gap-4">
-        <div className="text-right">
-          <p className="text-sm font-medium text-slate-800">{user.name}</p>
-          <p className="text-xs text-slate-400">{user.role}</p>
-        </div>
-        <button
-          onClick={() => signOut({ callbackUrl: "/auth/login" })}
-          className="flex items-center gap-1.5 text-slate-400 hover:text-slate-700 transition text-sm"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
+    <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+      <div>
+        <div className="text-sm text-gray-500">Sistema paralelo</div>
+        <div className="font-semibold">Controle de produção de cálculos</div>
+      </div>
+      <div className="text-right text-sm">
+        <div className="font-medium">{session?.user?.name}</div>
+        <div className="text-gray-500">{(session?.user as any)?.role}</div>
       </div>
     </header>
   );
