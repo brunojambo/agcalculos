@@ -3,7 +3,7 @@
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { StatusProcesso } from "@prisma/client";
+import { Prisma, StatusProcesso } from "@prisma/client";
 import { authOptions } from "@/lib/auth/options";
 import { prisma } from "@/lib/db/prisma";
 
@@ -28,38 +28,47 @@ function parseStatus(value: FormDataEntryValue | null) {
 
 export async function criarProcesso(formData: FormData) {
   const usuarioId = await requireUserId();
+  const processoId = String(formData.get("processoId") ?? "").trim();
   const reclamante = String(formData.get("reclamante") ?? "").trim();
   const clienteId = String(formData.get("clienteId") ?? "").trim();
   const tipoCalculoId = String(formData.get("tipoCalculoId") ?? "").trim();
 
+  if (!processoId) throw new Error("Identificador do formulario ausente.");
   if (!reclamante || !clienteId || !tipoCalculoId) {
     throw new Error("Reclamante, cliente e tipo de calculo sao obrigatorios.");
   }
 
-  await prisma.$transaction(async (tx) => {
-    const processo = await tx.processo.create({
-      data: {
-        numeroCnj: String(formData.get("numeroCnj") ?? "").trim() || null,
-        reclamante,
-        reclamada: String(formData.get("reclamada") ?? "").trim() || null,
-        clienteId,
-        tipoCalculoId,
-        prazoInterno: parseDate(formData.get("prazoInterno")),
-        prazoFatal: parseDate(formData.get("prazoFatal")),
-        observacao: String(formData.get("observacao") ?? "").trim() || null
-      }
-    });
+  try {
+    await prisma.$transaction(async (tx) => {
+      const processo = await tx.processo.create({
+        data: {
+          id: processoId,
+          numeroCnj: String(formData.get("numeroCnj") ?? "").trim() || null,
+          reclamante,
+          reclamada: String(formData.get("reclamada") ?? "").trim() || null,
+          clienteId,
+          tipoCalculoId,
+          prazoInterno: parseDate(formData.get("prazoInterno")),
+          prazoFatal: parseDate(formData.get("prazoFatal")),
+          observacao: String(formData.get("observacao") ?? "").trim() || null
+        }
+      });
 
-    await tx.movimentacao.create({
-      data: {
-        processoId: processo.id,
-        usuarioId,
-        statusAnterior: null,
-        statusNovo: processo.status,
-        observacao: "Processo cadastrado."
-      }
+      await tx.movimentacao.create({
+        data: {
+          processoId: processo.id,
+          usuarioId,
+          statusAnterior: null,
+          statusNovo: processo.status,
+          observacao: "Processo cadastrado."
+        }
+      });
     });
-  });
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) {
+      throw error;
+    }
+  }
 
   revalidatePath("/dashboard/processos");
   redirect("/dashboard/processos");

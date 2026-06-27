@@ -10,16 +10,25 @@ export async function criarCliente(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) throw new Error("Usuario nao autenticado.");
 
+  const clienteId = String(formData.get("clienteId") ?? "").trim();
   const razaoSocial = String(formData.get("razaoSocial") ?? "").trim();
+  if (!clienteId) throw new Error("Identificador do formulario ausente.");
   if (!razaoSocial) throw new Error("Razao social e obrigatoria.");
 
-  await prisma.cliente.create({
-    data: {
-      razaoSocial,
-      nomeFantasia: String(formData.get("nomeFantasia") ?? "").trim() || null,
-      cnpj: String(formData.get("cnpj") ?? "").trim() || null,
-      cidade: String(formData.get("cidade") ?? "").trim() || null,
-      uf: String(formData.get("uf") ?? "").trim().toUpperCase() || null
+  const data = {
+    razaoSocial,
+    nomeFantasia: String(formData.get("nomeFantasia") ?? "").trim() || null,
+    cnpj: String(formData.get("cnpj") ?? "").trim() || null,
+    cidade: String(formData.get("cidade") ?? "").trim() || null,
+    uf: String(formData.get("uf") ?? "").trim().toUpperCase() || null
+  };
+
+  await prisma.cliente.upsert({
+    where: { id: clienteId },
+    update: data,
+    create: {
+      id: clienteId,
+      ...data
     }
   });
 

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { StatusProcesso } from "@prisma/client";
 import { alterarStatus, atribuirResponsaveis } from "@/lib/actions/processos";
+import { SubmitButton } from "@/components/forms/SubmitButton";
 import { prisma } from "@/lib/db/prisma";
 import { formatDate, statusClass, statusLabel } from "@/lib/utils/format";
 import { formatCNJ } from "@/lib/utils/cnj";
@@ -64,7 +65,9 @@ export default async function ProcessoDetalhePage({ params }: { params: { id: st
                 </select>
               </label>
             ))}
-            <button className="rounded-lg bg-gray-900 px-4 py-2 font-semibold text-white">Salvar responsáveis</button>
+            <SubmitButton pendingLabel="Salvando..." className="rounded-lg bg-gray-900 px-4 py-2 font-semibold text-white">
+              Salvar responsáveis
+            </SubmitButton>
           </form>
         </section>
       </div>
@@ -77,7 +80,9 @@ export default async function ProcessoDetalhePage({ params }: { params: { id: st
               {Object.values(StatusProcesso).map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}
             </select>
             <textarea name="observacao" rows={3} placeholder="Observação da movimentação" className="w-full rounded-lg border border-gray-300 px-3 py-2" />
-            <button className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white">Registrar movimentação</button>
+            <SubmitButton pendingLabel="Registrando..." className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white">
+              Registrar movimentação
+            </SubmitButton>
           </form>
         </section>
 
