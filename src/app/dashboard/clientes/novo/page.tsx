@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { randomUUID } from "crypto";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { criarCliente } from "@/lib/actions/clientes";
