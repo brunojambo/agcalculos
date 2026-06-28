@@ -145,24 +145,33 @@ export default async function ProcessoDetalhePage({ params }: { params: { id: st
 
         {/* Coluna direita */}
         <div className="space-y-5">
-          {/* Alterar status */}
+          {/* Avançar status — botões diretos */}
           {proxStatus.length > 0 && (
             <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
-              <h2 className="font-semibold mb-3">Alterar status</h2>
-              <form action={alterarStatusAction} className="space-y-3">
-                <select name="status"
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm bg-white">
-                  {proxStatus.map((s) => (
-                    <option key={s} value={s}>{statusLabel(s)}</option>
-                  ))}
-                </select>
-                <textarea name="observacao" rows={2} placeholder="Observação (opcional)"
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm" />
-                <SubmitButton pendingLabel="Salvando..."
-                  className="w-full rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800">
-                  Confirmar
-                </SubmitButton>
-              </form>
+              <h2 className="font-semibold mb-3">Avançar para</h2>
+              <div className="space-y-2">
+                {proxStatus.map((s) => {
+                  const isPrimary = s !== "CANCELADO" && s !== "AGUARDANDO_CLIENTE";
+                  const isDanger  = s === "CANCELADO";
+                  const isWarn    = s === "AGUARDANDO_CLIENTE";
+                  return (
+                    <form key={s} action={alterarStatusAction}>
+                      <input type="hidden" name="status" value={s} />
+                      <SubmitButton
+                        pendingLabel="Salvando..."
+                        className={`w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+                          isDanger  ? "border border-red-300 bg-red-50 text-red-700 hover:bg-red-100" :
+                          isWarn    ? "border border-yellow-300 bg-yellow-50 text-yellow-700 hover:bg-yellow-100" :
+                          isPrimary ? "bg-blue-700 text-white hover:bg-blue-800" :
+                                      "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        → {statusLabel(s)}
+                      </SubmitButton>
+                    </form>
+                  );
+                })}
+              </div>
             </section>
           )}
 
