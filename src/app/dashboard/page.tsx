@@ -79,7 +79,7 @@ export default async function DashboardPage() {
     prisma.cliente.count({ where: { ativo: true } }),
   ]);
 
-  const totalAtivos = filaRaw.reduce((acc, s) => acc + s.total, 0);
+  const totalAtivos = filaRaw.reduce((acc: number, s) => acc + s.total, 0);
   const taxaConclusao = cadastradosMes > 0 ? Math.round((finalizadosMes / cadastradosMes) * 100) : 0;
 
   const STATUS_LABEL: Record<string, string> = {

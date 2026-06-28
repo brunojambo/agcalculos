@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calculator, Building2, BarChart3, LayoutDashboard, Settings } from "lucide-react";
+import { Calculator, Building2, BarChart3, LayoutDashboard, Settings, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 const items = [
@@ -10,6 +10,7 @@ const items = [
   { href: "/dashboard/processos", label: "Processos", icon: Calculator },
   { href: "/dashboard/clientes", label: "Clientes", icon: Building2 },
   { href: "/dashboard/relatorios", label: "Relatórios", icon: BarChart3 },
+  { href: "/dashboard/financeiro", label: "Financeiro", icon: DollarSign },
   { href: "/dashboard/cadastro", label: "Cadastro", icon: Settings },
 ];
 
