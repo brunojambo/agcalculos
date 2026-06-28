@@ -96,3 +96,28 @@ export async function atribuirResponsaveis(processoId: string, formData: FormDat
   revalidatePath(`/dashboard/processos/${processoId}`);
   revalidatePath("/dashboard/processos");
 }
+
+export async function editarProcesso(processoId: string, formData: FormData) {
+  await requireUserId();
+
+  function pd(v: FormDataEntryValue | null) {
+    const raw = String(v ?? "").trim();
+    return raw ? new Date(`${raw}T12:00:00-03:00`) : null;
+  }
+
+  await prisma.processo.update({
+    where: { id: processoId },
+    data: {
+      numeroCnj:     String(formData.get("numeroCnj")     ?? "").trim() || null,
+      reclamante:    String(formData.get("reclamante")    ?? "").trim(),
+      reclamada:     String(formData.get("reclamada")     ?? "").trim() || null,
+      tipoCalculoId: String(formData.get("tipoCalculoId") ?? "").trim(),
+      prazoInterno:  pd(formData.get("prazoInterno")),
+      prazoFatal:    pd(formData.get("prazoFatal")),
+      observacao:    String(formData.get("observacao")    ?? "").trim() || null,
+    },
+  });
+
+  revalidatePath(`/dashboard/processos/${processoId}`);
+  revalidatePath("/dashboard/processos");
+}

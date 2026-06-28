@@ -29,3 +29,11 @@ export function statusClass(status: string) {
   if (status === "AGUARDANDO_CLIENTE") return "bg-yellow-100 text-yellow-800";
   return "bg-blue-100 text-blue-800";
 }
+
+export function formatDateTime(date: Date | string | null | undefined): string {
+  if (!date) return "—";
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  }).format(new Date(date));
+}
